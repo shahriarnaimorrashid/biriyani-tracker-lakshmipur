@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>লক্ষ্মীপুর ফ্রি বিরিয়ানি ট্র্যাকার | Lakshmipur Biriyani Tracker</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;500;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; transition: 0.3s; }
+        #map { height: 350px; width: 100%; border-bottom: 4px solid #059669; z-index: 10; background: #eee; }
+        .dark #map { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        .dark .glass { background: rgba(31, 41, 55, 0.85); }
+        #preloader { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .dark #preloader { background: #111827; color: white; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .animate-marquee { display: inline-block; animation: marquee 20s linear infinite; }
+    </style>
+</head>
+<body class="bg-green-50 dark:bg-gray-900 dark:text-gray-100 pb-40">
+
+    <div id="preloader">
+        <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_m6cuL6.json" background="transparent" speed="1.5" style="width: 180px;" loop autoplay></lottie-player>
+        <p class="text-green-600 font-bold mt-4 animate-pulse text-xl">লোডিং হচ্ছে...</p>
+    </div>
+
+    <div class="bg-stone-900 text-white py-3 px-4 flex justify-between items-center sticky top-0 z-[60]">
+        <div class="text-[11px] font-bold text-green-400" id="countdown">ইফতারের বাকি: --:--:--</div>
+        <div class="flex gap-4 items-center">
+            <button onclick="toggleDarkMode()" class="text-green-400"><i id="dark-icon" class="fa-solid fa-moon"></i></button>
+        </div>
+    </div>
+
+    <div class="bg-green-600 text-white text-[10px] py-1 font-bold overflow-hidden border-b border-green-700">
+        <div class="animate-marquee whitespace-nowrap">
+            🌙 লক্ষ্মীপুর জেলার সকল ফ্রি ইফতার ও বিরিয়ানি লোকেশন এখানে পাবেন। ভুল তথ্য দিয়ে কাউকে বিভ্রান্ত করবেন না।
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <header class="py-6 px-4 text-center glass border-b dark:border-gray-700 sticky top-[44px] z-50 shadow-sm">
+        <h1 class="text-2xl font-black text-green-700 tracking-tighter">লক্ষ্মীপুর ফ্রি বিরিয়ানি ট্র্যাকার 🥧</h1>
+        <div class="mt-2 inline-flex items-center gap-2 bg-green-100 dark:bg-gray-700 text-green-700 dark:text-green-400 px-4 py-1 rounded-full text-[10px] font-bold">
+            <span id="active-count">0</span>টি লাইভ লোকেশন পাওয়া গেছে
+        </div>
+    </header>
+
+    <div class="max-w-md mx-auto px-4 mt-6 flex flex-col gap-3">
+        <div class="flex gap-2">
+            <input id="search-input" oninput="applyFilters()" placeholder="এলাকা বা মসজিদের নাম..." class="flex-1 p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 outline-none text-sm">
+        </div>
+        <div class="flex gap-2">
+            <select id="upazila-filter" onchange="applyFilters()" class="flex-1 p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 text-sm font-bold bg-white dark:text-white">
+                <option value="">সকল উপজেলা</option>
+                <option value="সদর">লক্ষ্মীপুর সদর</option>
+                <option value="রায়পুর">রায়পুর</option>
+                <option value="রামগঞ্জ">রামগঞ্জ</option>
+                <option value="রামগতি">রামগতি</option>
+                <option value="কমলনগর">কমলনগর</option>
+            </select>
+            <select id="food-filter" onchange="applyFilters()" class="flex-1 p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 text-sm font-bold bg-white dark:text-white">
+                <option value="">সব খাবার</option>
+                <option value="কাচ্চি">কাচ্চি</option>
+                <option value="তেহারি">তেহারি</option>
+                <option value="গরু">গরু বিরিয়ানি</option>
+                <option value="চিকেন">চিকেন বিরিয়ানি</option>
+            </select>
+        </div>
+    </div>
+
+    <main id="post-container" class="max-w-md mx-auto px-4 mt-8 space-y-6"></main>
+
+    <div class="max-w-md mx-auto px-4 mt-12 mb-20">
+        <div class="bg-gradient-to-r from-green-600 to-green-500 text-white rounded-3xl p-6 text-center shadow-xl">
+            <p class="text-[10px] uppercase font-bold opacity-80 mb-1">Developed By</p>
+            <h2 class="text-xl font-black mb-1">Shahriar Naim</h2>
+            <p class="text-xs mb-4">লক্ষ্মীপুরবাসীর সেবায় নিয়োজিত</p>
+            <div class="flex justify-center gap-6 text-2xl">
+                <a href="https://www.facebook.com/shahriarnaimorrashid" target="_blank" class="hover:scale-110 transition-transform"><i class="fa-brands fa-facebook"></i></a>
+                <a href="https://www.instagram.com/shahriarnaimurrashid/" target="_blank" class="hover:scale-110 transition-transform"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
+        <button onclick="toggleForm()" class="w-full bg-green-600 text-white font-black py-4 rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-4 border-white dark:border-gray-800">
+            <i class="fa-solid fa-plus-circle"></i> নতুন বিরিয়ানি পয়েন্ট অ্যাড করুন
+        </button>
+    </div>
+
+    <div id="add-form" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-end justify-center z-[120]">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md p-8 rounded-t-[3rem] shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h2 class="text-xl font-bold mb-4 text-green-600">পয়েন্ট অ্যাড করুন 📝</h2>
+            <input id="user-name" type="text" placeholder="আপনার নাম" class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 border outline-none">
+            <select id="upazila-name" class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 border outline-none">
+                <option value="সদর">লক্ষ্মীপুর সদর</option>
+                <option value="রায়পুর">রায়পুর</option>
+                <option value="রামগঞ্জ">রামগঞ্জ</option>
+                <option value="রামগতি">রামগতি</option>
+                <option value="কমলনগর">কমলনগর</option>
+            </select>
+            <input id="loc-name" type="text" placeholder="সঠিক এলাকার নাম" class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 border outline-none">
+            <input id="mosque-name" type="text" placeholder="মসজিদের নাম" class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 border outline-none">
+            <select id="food-type" class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 border outline-none">
+                <option value="কাচ্চি">কাচ্চি</option>
+                <option value="তেহারি">তেহারি</option>
+                <option value="গরু">গরু বিরিয়ানি</option>
+                <option value="চিকেন">চিকেন বিরিয়ানি</option>
+            </select>
+            <textarea id="loc-desc" placeholder="বিস্তারিত তথ্য..." class="w-full p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl mb-6 border outline-none h-24"></textarea>
+            <div class="flex gap-4">
+                <button onclick="toggleForm()" class="flex-1 font-bold text-gray-400">বাতিল</button>
+                <button onclick="saveData()" id="submit-btn" class="flex-[2] bg-green-600 text-white py-4 rounded-2xl font-black">সেভ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DB_URL = "https://cumilla-biriyani-default-rtdb.asia-southeast1.firebasedatabase.app/lakshmipur_posts.json";
+        let map, markersLayer, userCoords = { lat: 22.9447, lon: 90.8411 }, allPosts = [];
+
+        // Initialize App
+        function init() {
+            // ১. ম্যাপ সেটআপ
+            map = L.map('map', { zoomControl: false }).setView([userCoords.lat, userCoords.lon], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
+
+            // ২. ডেটা ফেচিং এবং লোকেশন একই সাথে শুরু
+            fetchData(); 
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                    map.setView([userCoords.lat, userCoords.lon], 13);
+                    L.circleMarker([userCoords.lat, userCoords.lon], { radius: 6, color: '#10b981' }).addTo(map);
+                });
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(DB_URL);
+                const data = await res.json();
+                allPosts = data ? Object.keys(data).map(id => ({ id, ...data[id] })).reverse() : [];
+                applyFilters();
+                // ডেটা লোড হয়ে গেলে প্রি-লোডার বন্ধ
+                document.getElementById('preloader').style.display = 'none';
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('preloader').style.display = 'none';
+            }
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const foodType = document.getElementById('food-filter').value;
+            const upazilaType = document.getElementById('upazila-filter').value;
+
+            const filtered = allPosts.filter(p => {
+                const matchSearch = (p.location || "").toLowerCase().includes(searchTerm) || (p.mosqueName || "").toLowerCase().includes(searchTerm);
+                const matchFood = foodType === "" || p.foodType === foodType;
+                const matchUpazila = upazilaType === "" || p.upazila === upazilaType;
+                return matchSearch && matchFood && matchUpazila;
+            });
+            renderUI(filtered);
+        }
+
+        function renderUI(posts) {
+            const container = document.getElementById('post-container');
+            container.innerHTML = ""; markersLayer.clearLayers();
+            document.getElementById('active-count').innerText = posts.length;
+
+            posts.forEach(post => {
+                if(post.lat && post.lon) {
+                    L.marker([post.lat, post.lon], { 
+                        icon: L.divIcon({className:'biriyani-marker', html:'🍛', iconSize: [25, 25]}) 
+                    }).addTo(markersLayer).bindPopup(`<b>${post.location}</b>`);
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white dark:bg-gray-800 rounded-[2rem] p-6 shadow-md border border-green-50 dark:border-gray-700">
+                        <div class="flex justify-between items-center mb-3 text-[10px] text-gray-400 font-bold uppercase">
+                            <span>উপজেলা: ${post.upazila}</span>
+                            <span>${new Date(post.timestamp).toLocaleTimeString('bn-BD')}</span>
+                        </div>
+                        <h3 class="text-xl font-black text-gray-800 dark:text-white">📍 ${post.location}</h3>
+                        <p class="text-green-600 font-bold text-sm mb-2"><i class="fa-solid fa-mosque"></i> ${post.mosqueName}</p>
+                        <p class="text-gray-500 text-xs mb-4">${post.description}</p>
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">${post.foodType}</span>
+                    </div>
+                `;
+            });
+        }
+
+        async function saveData() {
+            const loc = document.getElementById('loc-name').value;
+            const mosque = document.getElementById('mosque-name').value;
+            if(!loc || !mosque) return alert("সব তথ্য দিন!");
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "সেভ হচ্ছে...";
+            const payload = {
+                userName: document.getElementById('user-name').value || "Anonymous",
+                location: loc,
+                upazila: document.getElementById('upazila-name').value,
+                mosqueName: mosque,
+                description: document.getElementById('loc-desc').value,
+                foodType: document.getElementById('food-type').value,
+                timestamp: Date.now(),
+                lat: userCoords.lat,
+                lon: userCoords.lon
+            };
+
+            await fetch(DB_URL, { method: 'POST', body: JSON.stringify(payload) });
+            toggleForm(); fetchData();
+            btn.innerText = "সেভ করুন";
+        }
+
+        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+        function toggleForm() { document.getElementById('add-form').classList.toggle('hidden'); }
+
+        // Countdown
+        setInterval(() => {
+            const now = new Date(); const iftar = new Date(); iftar.setHours(17, 58, 0);
+            if (now > iftar) iftar.setDate(iftar.getDate() + 1);
+            const diff = iftar - now;
+            const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+            document.getElementById('countdown').innerText = `ইফতারের বাকি: ${h}:${m}:${s}`;
+        }, 1000);
+
+        // Start App
+        window.onload = init;
+    </script>
+</body>
+</html>
