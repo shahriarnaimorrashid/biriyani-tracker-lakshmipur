@@ -31,7 +31,7 @@
 
     <div id="preloader">
         <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_m6cuL6.json" background="transparent" speed="1.5" style="width: 180px;" loop autoplay></lottie-player>
-        <p class="text-green-600 font-bold mt-4 animate-pulse text-xl">লোডিং হচ্ছে...</p>
+        <p class="text-green-600 font-bold mt-4 animate-pulse text-xl text-center px-4">আপনার লোকেশন চেক করা হচ্ছে...</p>
     </div>
 
     <div class="bg-stone-900 text-white py-3 px-4 flex justify-between items-center sticky top-0 z-[60]">
@@ -56,11 +56,11 @@
     </header>
 
     <div class="max-w-md mx-auto px-4 mt-6 flex flex-col gap-3">
-        <input id="search-input" oninput="applyFilters()" placeholder="সার্চ (এলাকা বা স্থান)..." class="p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 outline-none text-sm">
+        <input id="search-input" oninput="applyFilters()" placeholder="সার্চ (এলাকা বা স্থান)..." class="p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 outline-none text-sm bg-white">
         <div class="flex gap-2">
             <select id="upazila-filter" onchange="applyFilters()" class="flex-1 p-3 rounded-xl border dark:bg-gray-800 dark:border-gray-700 text-sm font-bold bg-white dark:text-white outline-none">
                 <option value="">সকল উপজেলা</option>
-                <option value="সদর">লক্ষ্মীপুর সদর</option>
+                <option value="সদর">সদর</option>
                 <option value="রায়পুর">রায়পুর</option>
                 <option value="রামগঞ্জ">রামগঞ্জ</option>
                 <option value="রামগতি">রামগতি</option>
@@ -137,19 +137,40 @@
         const googleStreetUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 
         function init() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('target-date').value = today;
-            document.getElementById('target-date').min = today;
+            // 1. Initialize Maps
             mainMap = L.map('main-map', { zoomControl: false }).setView([userCoords.lat, userCoords.lon], 12);
             L.tileLayer(googleStreetUrl, { subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Maps' }).addTo(mainMap);
             markersLayer = L.layerGroup().addTo(mainMap);
+
             miniMap = L.map('mini-map', { zoomControl: false }).setView([userCoords.lat, userCoords.lon], 13);
             L.tileLayer(googleStreetUrl, { subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Maps' }).addTo(miniMap);
+            
             miniMap.on('click', function(e) {
                 selectedCoords = { lat: e.latlng.lat, lon: e.latlng.lng };
                 if(miniMarker) miniMap.removeLayer(miniMarker);
                 miniMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(miniMap);
             });
+
+            // 2. Request User Location
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    userCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                    mainMap.setView([userCoords.lat, userCoords.lon], 14);
+                    miniMap.setView([userCoords.lat, userCoords.lon], 14);
+                    
+                    // Add User Blue Dot
+                    L.circleMarker([userCoords.lat, userCoords.lon], {
+                        radius: 8, color: 'white', weight: 3, fillColor: '#3b82f6', fillOpacity: 1
+                    }).addTo(mainMap).bindPopup("আপনি এখানে আছেন");
+                }, error => {
+                    console.log("Location access denied");
+                });
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('target-date').value = today;
+            document.getElementById('target-date').min = today;
+
             fetchData(); startTimer();
         }
 
@@ -160,9 +181,9 @@
                 if(pass === "audi3122") {
                     isAdmin = true;
                     document.getElementById('admin-badge').classList.remove('hidden');
-                    alert("Admin Mode On! আপনি যেকোনো পোস্ট ডিলিট করতে পারবেন।");
+                    alert("Admin Mode On!");
                     renderUI(allPosts);
-                } else { alert("ভুল পাসওয়ার্ড!"); }
+                }
                 clickCount = 0;
             }
             setTimeout(() => { clickCount = 0; }, 3000);
@@ -212,10 +233,12 @@
             const container = document.getElementById('post-container');
             container.innerHTML = ""; markersLayer.clearLayers();
             document.getElementById('active-count').innerText = posts.length.toLocaleString('bn-BD');
+
             posts.forEach(post => {
                 const showDelete = myPosts.includes(post.id) || isAdmin;
                 const icon = post.foodType === "আল্লাহর ওয়াস্তে খানা" ? '🏠' : (post.foodType === "ছোলা মুড়ি" ? '🥣' : '🍛');
                 const directionUrl = `https://www.google.com/maps/dir/?api=1&destination=${post.lat},${post.lon}`;
+                
                 if(post.lat && post.lon) {
                     const marker = L.marker([post.lat, post.lon], { 
                         icon: L.divIcon({ className: '', html: `<div style="font-size:28px;">${icon}</div>`, iconSize: [35, 35]}) 
@@ -255,13 +278,11 @@
                 timestamp: Date.now(), lat: selectedCoords.lat, lon: selectedCoords.lon
             };
             if(!payload.location || !payload.mosqueName) return alert("তথ্য অসম্পূর্ণ!");
-            document.getElementById('submit-btn').innerText = "সেভ হচ্ছে...";
             const res = await fetch(`${DB_URL}.json`, { method: 'POST', body: JSON.stringify(payload) });
             const data = await res.json();
             myPosts.push(data.name);
             localStorage.setItem('my_lak_posts', JSON.stringify(myPosts));
             toggleForm(); fetchData();
-            document.getElementById('submit-btn').innerText = "সেভ করুন";
         }
 
         async function deletePost(id) {
@@ -282,7 +303,6 @@
             const f = document.getElementById('add-form');
             f.classList.toggle('hidden');
             if(!f.classList.contains('hidden')) setTimeout(() => { miniMap.invalidateSize(); }, 300);
-            else { if(miniMarker) miniMap.removeLayer(miniMarker); selectedCoords = null; }
         }
 
         function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
