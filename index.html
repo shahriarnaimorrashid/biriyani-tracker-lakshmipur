@@ -22,8 +22,11 @@
         .dark .glass { background: rgba(31, 41, 55, 0.85); }
         #preloader { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .dark #preloader { background: #111827; color: white; }
+        
+        /* Smooth Marquee Animation */
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        .animate-marquee { display: inline-block; animation: marquee 20s linear infinite; }
+        .animate-marquee { display: inline-block; animation: marquee 35s linear infinite; }
+        
         .post-card { transition: 0.3s; border-radius: 28px; border: 1px solid rgba(0,0,0,0.05); }
     </style>
 </head>
@@ -39,9 +42,13 @@
         <button onclick="toggleDarkMode()" class="text-green-400 text-lg"><i class="fa-solid fa-circle-half-stroke"></i></button>
     </div>
 
-    <div class="bg-green-600 text-white text-[10px] py-1 font-bold overflow-hidden border-b border-green-700">
+    <div class="bg-green-600 text-white text-[11px] py-2 font-bold overflow-hidden border-b border-green-700 shadow-inner">
         <div class="animate-marquee whitespace-nowrap">
-            🌙 যেকোনো পয়েন্টে ক্লিক করে "রাস্তা দেখুন" বাটনে চাপ দিলে গুগল ম্যাপ আপনাকে পথ দেখিয়ে নিয়ে যাবে।
+            🌙 "যে ব্যক্তি কোনো রোজাদারকে ইফতার করাবে, সে তার সমান সওয়াব পাবে।" (হাদিস) &nbsp;&nbsp; | &nbsp;&nbsp; 
+            🤲 "আল্লাহর সন্তুষ্টির জন্য ক্ষুধার্তকে অন্ন দান করা সর্বোত্তম ইবাদত।" &nbsp;&nbsp; | &nbsp;&nbsp; 
+            🥧 "যেকোনো পয়েন্টে ক্লিক করে 'রাস্তা দেখুন' বাটনে চাপ দিলে গুগল ম্যাপ আপনাকে পথ দেখিয়ে নিয়ে যাবে।" &nbsp;&nbsp; | &nbsp;&nbsp; 
+            ✨ "আপনার দান করা এক লোকমা খাবার হতে পারে পরকালে মুক্তির উছিলা।" &nbsp;&nbsp; | &nbsp;&nbsp; 
+            🕌 "আল্লাহর রাস্তায় দান করুন, তিনি আপনাকে উত্তম প্রতিদান দেবেন।"
         </div>
     </div>
 
@@ -137,7 +144,6 @@
         const googleStreetUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 
         function init() {
-            // 1. Initialize Maps
             mainMap = L.map('main-map', { zoomControl: false }).setView([userCoords.lat, userCoords.lon], 12);
             L.tileLayer(googleStreetUrl, { subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Maps' }).addTo(mainMap);
             markersLayer = L.layerGroup().addTo(mainMap);
@@ -151,20 +157,15 @@
                 miniMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(miniMap);
             });
 
-            // 2. Request User Location
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(position => {
                     userCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
                     mainMap.setView([userCoords.lat, userCoords.lon], 14);
                     miniMap.setView([userCoords.lat, userCoords.lon], 14);
-                    
-                    // Add User Blue Dot
                     L.circleMarker([userCoords.lat, userCoords.lon], {
                         radius: 8, color: 'white', weight: 3, fillColor: '#3b82f6', fillOpacity: 1
                     }).addTo(mainMap).bindPopup("আপনি এখানে আছেন");
-                }, error => {
-                    console.log("Location access denied");
-                });
+                }, () => { console.log("Location access denied"); });
             }
 
             const today = new Date().toISOString().split('T')[0];
@@ -181,7 +182,7 @@
                 if(pass === "audi3122") {
                     isAdmin = true;
                     document.getElementById('admin-badge').classList.remove('hidden');
-                    alert("Admin Mode On!");
+                    alert("Admin Mode Active!");
                     renderUI(allPosts);
                 }
                 clickCount = 0;
