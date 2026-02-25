@@ -23,9 +23,10 @@
         #preloader { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .dark #preloader { background: #111827; color: white; }
         
-        /* Slow & Smooth Marquee Animation */
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        .animate-marquee { display: inline-block; animation: marquee 65s linear infinite; }
+        /* Fixed Marquee: Instant Visibility */
+        .marquee-wrapper { overflow: hidden; white-space: nowrap; display: flex; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        .animate-marquee { display: inline-block; padding-left: 20px; animation: marquee 65s linear infinite; }
         
         .post-card { transition: 0.3s; border-radius: 28px; border: 1px solid rgba(0,0,0,0.05); }
     </style>
@@ -42,13 +43,20 @@
         <button onclick="toggleDarkMode()" class="text-green-400 text-lg"><i class="fa-solid fa-circle-half-stroke"></i></button>
     </div>
 
-    <div class="bg-green-600 text-white text-[15px] py-3 font-bold overflow-hidden border-b border-green-700 shadow-inner">
-        <div class="animate-marquee whitespace-nowrap">
-            🌙 "যে ব্যক্তি কোনো রোজাদারকে ইফতার করাবে, সে তার সমান সওয়াব পাবে।" (হাদিস)    |    
-            🤲 "আল্লাহর সন্তুষ্টির জন্য ক্ষুধার্তকে অন্ন দান করা সর্বোত্তম ইবাদত।"    |    
-            🥧 "যেকোনো পয়েন্টে ক্লিক করে 'রাস্তা দেখুন' বাটনে চাপ দিলে গুগল ম্যাপ আপনাকে পথ দেখিয়ে নিয়ে যাবে।"    |    
-            ✨ "আপনার দান করা এক লোকমা খাবার হতে পারে পরকালে মুক্তির উছিলা।"    |    
-            🕌 "আল্লাহর রাস্তায় দান করুন, তিনি আপনাকে উত্তম প্রতিদান দেবেন।"
+    <div class="bg-green-600 text-white text-[15px] py-3 font-bold border-b border-green-700 shadow-inner marquee-wrapper">
+        <div class="animate-marquee">
+            🌙 "যে ব্যক্তি কোনো রোজাদারকে ইফতার করাবে, সে তার সমান সওয়াব পাবে।" (হাদিস) &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🤲 "আল্লাহর সন্তুষ্টির জন্য ক্ষুধার্তকে অন্ন দান করা সর্বোত্তম ইবাদত।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🥧 "যেকোনো পয়েন্টে ক্লিক করে 'রাস্তা দেখুন' বাটনে চাপ দিলে গুগল ম্যাপ আপনাকে পথ দেখিয়ে নিয়ে যাবে।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            ✨ "আপনার দান করা এক লোকমা খাবার হতে পারে পরকালে মুক্তির উছিলা।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🕌 "আল্লাহর রাস্তায় দান করুন, তিনি আপনাকে উত্তম প্রতিদান দেবেন।" &nbsp;&nbsp;&nbsp;
+        </div>
+        <div class="animate-marquee">
+            🌙 "যে ব্যক্তি কোনো রোজাদারকে ইফতার করাবে, সে তার সমান সওয়াব পাবে।" (হাদিস) &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🤲 "আল্লাহর সন্তুষ্টির জন্য ক্ষুধার্তকে অন্ন দান করা সর্বোত্তম ইবাদত।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🥧 "যেকোনো পয়েন্টে ক্লিক করে 'রাস্তা দেখুন' বাটনে চাপ দিলে গুগল ম্যাপ আপনাকে পথ দেখিয়ে নিয়ে যাবে।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            ✨ "আপনার দান করা এক লোকমা খাবার হতে পারে পরকালে মুক্তির উছিলা।" &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; 
+            🕌 "আল্লাহর রাস্তায় দান করুন, তিনি আপনাকে উত্তম প্রতিদান দেবেন।" &nbsp;&nbsp;&nbsp;
         </div>
     </div>
 
@@ -180,12 +188,11 @@
 
         async function getIftarTime() {
             try {
-                // Aladhan API for Lakshmipur District, Bangladesh
                 const response = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=Lakshmipur&country=Bangladesh&method=1`);
                 const data = await response.json();
-                iftarTime = data.data.timings.Maghrib; // Maghrib = Iftar
+                iftarTime = data.data.timings.Maghrib;
             } catch (e) {
-                iftarTime = "18:15"; // Default if API fails
+                iftarTime = "18:15"; 
             }
         }
 
@@ -196,13 +203,8 @@
                 const [h, m] = iftarTime.split(':');
                 const iftarDate = new Date();
                 iftarDate.setHours(h, m, 0);
-
                 let diff = iftarDate - now;
-                if (diff < 0) {
-                    iftarDate.setDate(iftarDate.getDate() + 1);
-                    diff = iftarDate - now;
-                }
-
+                if (diff < 0) { iftarDate.setDate(iftarDate.getDate() + 1); diff = iftarDate - now; }
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
