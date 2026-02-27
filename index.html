@@ -12,7 +12,22 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <script>tailwind.config = { darkMode: 'class' }</script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            700: '#2d2d2d',
+                            800: '#1e1e1e',
+                            900: '#121212',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;500;700&display=swap');
         
@@ -38,10 +53,10 @@
         #mini-map { height: 220px; width: 100%; border-radius: 20px; margin-bottom: 15px; border: 2px solid #e5e7eb; }
         
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
-        .dark .glass { background: rgba(31, 41, 55, 0.85); }
+        .dark .glass { background: rgba(30, 30, 30, 0.85); }
 
         #preloader { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .dark #preloader { background: #111827; color: white; }
+        .dark #preloader { background: #121212; color: white; }
 
         .marquee-wrapper { overflow: hidden; white-space: nowrap; display: flex; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
@@ -118,7 +133,7 @@
         <div class="bg-gradient-to-r from-green-600 to-green-500 text-white rounded-3xl p-6 text-center shadow-xl">
             <p class="text-[10px] uppercase font-bold opacity-80 mb-1">Developed By</p>
             <h2 id="dev-name" onclick="adminTrigger()" class="text-xl font-black mb-0 cursor-pointer select-none tracking-tight">Shahriar Naim Or Rashid</h2>
-            <p class="text-[13px] font-medium opacity-90 mt-1">লক্ষ্মীপুরবাসীর সেবায় নিয়োজিত</p>
+            <p class="text-[13px] font-medium opacity-90 mt-1">লক্ষ্মীপুরবাসীর সেবায় নিয়োজিত</p>
             <div class="flex justify-center gap-6 text-2xl mt-4">
                 <a href="https://www.facebook.com/shahriarnaimorrashid" target="_blank"><i class="fa-brands fa-facebook"></i></a>
                 <a href="https://www.instagram.com/shahriarnaimurrashid/" target="_blank"><i class="fa-brands fa-instagram"></i></a>
@@ -166,7 +181,7 @@
         const googleStreetUrl = 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
         const googleHybridUrl = 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}';
 
-        // --- RGB Particle Background Script ---
+        // --- RGB Particle Background Script (Enhanced Visibility) ---
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -178,10 +193,10 @@
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    size: Math.random() * 2 + 1,
+                    size: Math.random() * 3 + 1.5, // Increased size slightly
                     speedX: (Math.random() - 0.5) * 0.5,
                     speedY: (Math.random() - 0.5) * 0.5,
-                    color: `hsla(${Math.random() * 360}, 70%, 70%, 0.3)`
+                    color: `hsla(${Math.random() * 360}, 100%, 65%, 0.85)` // Increased saturation, brightness, and opacity
                 });
             }
         }
@@ -232,7 +247,14 @@
                 await fetchData();
                 startTimer();
             } catch (err) { console.error(err); }
-            document.getElementById('preloader').style.display = 'none';
+            
+            // Smooth Preloader Fade-out with delay
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.transition = 'opacity 0.6s ease';
+                preloader.style.opacity = '0';
+                setTimeout(() => { preloader.style.display = 'none'; }, 600);
+            }, 800);
         }
 
         async function getIftarTime() {
@@ -305,7 +327,9 @@
                 const showDelete = myPosts.includes(post.id) || isAdmin;
                 const dist = calculateDistance(userCoords.lat, userCoords.lon, post.lat, post.lon);
                 const icon = post.foodType === "আল্লাহর ওয়াস্তে খানা" ? '🏠' : '🍛';
-                const directionUrl = `https://www.google.com/maps/dir/?api=1&destination=${post.lat},${post.lon}`;
+                
+                // Fixed google maps direction URL bug
+                const directionUrl = `https://maps.google.com/?q=${post.lat},${post.lon}`;
                 
                 const rawText = `📍 লক্ষ্মীপুরে ফ্রি ইফতারের লোকেশন: ${post.location}\n🕌 স্থান: ${post.mosqueName}\n🍛 খাবার: ${post.foodType}\n👉 ম্যাপ দেখুন: ${directionUrl}`;
                 const waUrl = `https://wa.me/?text=${encodeURIComponent(rawText)}`;
